@@ -1,0 +1,4 @@
+NAME: ShapeNet
+DATA_PATH: /home/amaya/repos/CrossMoST/data/ShapeNet55
+PC_PATH: /home/amaya/repos/CrossMoST/data/ShapeNet55/shapenet_pc
+IMAGE_PATH: /home/amaya/repos/CrossMoST/data/ShapeNet55/rendered_images
