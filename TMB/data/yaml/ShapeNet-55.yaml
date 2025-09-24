@@ -1,0 +1,5 @@
+NAME: ShapeNet
+DATA_PATH: /data/Lan/datasets/ShapeNet/shapenet-55/
+PC_PATH: /data/Lan/datasets/ShapeNet/shapenet-55/shapenet_pc
+IMAGE_PATH: /data/Lan/datasets/ShapeNet/shapenet-55/rendered_images
+Depth_PATH:

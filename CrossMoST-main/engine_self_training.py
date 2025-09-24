@@ -18,13 +18,55 @@ def train_one_epoch(model: torch.nn.Module, args, train_config,
                     lr_schedule_values=None, model_ema=None):
     model.train()
 
+    # 初始化一个用于记录训练过程各类指标的MetricLogger对象，分隔符为两个空格
     metric_logger = MetricLogger(delimiter="  ")
+    # 添加一个名为'lr'的指标，用于记录学习率，窗口大小为1，格式为小数点后6位
     metric_logger.add_meter('lr', SmoothedValue(window_size=1, fmt='{value:.6f}'))
+    # 添加一个名为'min_lr'的指标，用于记录最小学习率，窗口大小为1，格式为小数点后6位
     metric_logger.add_meter('min_lr', SmoothedValue(window_size=1, fmt='{value:.6f}'))
     header = 'Epoch: [{}]'.format(epoch)
     print_freq = 1
+    
+    # 添加
+    base_threshold_image = 0.6
+    base_threshold_pc = 0.6
+    base_threshold_depth = 0.6
+    base_threshold_combined = 0.6
+    max_threshold = 0.9
+    increment_every = 5 # 每隔多少个 epoch 增加一次
+    increment_step = 0.05 # 每次增加多少
 
-    for step, ((images_weak, images_strong, mask, pc_weak, pc_strong, pc_mask), targets) in enumerate(metric_logger.log_every(data_loader, print_freq, header)):
+    adjusted_threshold_image = min(max_threshold, base_threshold_image + (epoch // increment_every) * increment_step)
+    adjusted_threshold_pc = min(max_threshold, base_threshold_pc + (epoch // increment_every) * increment_step)
+    adjusted_threshold_depth = min(max_threshold, base_threshold_depth + (epoch // increment_every) * increment_step)
+    adjusted_threshold_combined = min(max_threshold, base_threshold_combined + (epoch // increment_every) * increment_step)
+
+    train_config["conf_threshold_image"] = adjusted_threshold_image
+    train_config["conf_threshold_pc"] = adjusted_threshold_pc
+    train_config["conf_threshold_depth"] = adjusted_threshold_depth
+    train_config["base_threshold_combined"] = adjusted_threshold_combined
+
+    # 这里的(images_weak, images_strong, mask, pc_weak, pc_strong, pc_mask), targets 是从 data_loader 中获取的一个batch的数据。
+    # data_loader 是 PyTorch 的 DataLoader 实例，其每次迭代返回一个batch的数据。
+    # 通常，数据集的 __getitem__ 方法会返回一个元组：(输入数据, 标签)。
+    # 在本例中，输入数据被进一步拆分为六个部分：
+    #   - images_weak: 图像的弱增强版本
+    #   - images_strong: 图像的强增强版本
+    #   - mask: 图像掩码
+    #   - pc_weak: 点云的弱增强版本
+    #   - pc_strong: 点云的强增强版本
+    #   - pc_mask: 点云掩码
+    # targets: 真实标签
+    # 这些数据通常由自定义的Dataset的__getitem__方法返回，形如：
+    #   return (images_weak, images_strong, mask, pc_weak, pc_strong, pc_mask), targets
+
+    # enumerate(metric_logger.log_every(data_loader, print_freq, header)) 的作用如下：
+    # - metric_logger.log_every 是一个包装器，用于每隔 print_freq 步打印一次训练进度和指标，并在每个epoch开始时打印header。
+    # - enumerate 用于为每个batch分配一个step索引。
+    # 这样，for循环每次迭代会获得当前step编号，以及一个batch的输入数据和标签。
+
+    for step, ((images_weak, images_strong, mask, pc_weak, pc_strong, pc_mask), targets) in enumerate(
+            metric_logger.log_every(data_loader, print_freq, header)):
         # assign learning rate for each step
         it = start_steps + step  # global training iteration
         if lr_schedule_values is not None:
@@ -56,13 +98,24 @@ def train_one_epoch(model: torch.nn.Module, args, train_config,
             score_pc, pseudo_targets_pc = probs_ema_pc.max(-1)
 
             b = (1 / probs_ema_image.shape[1]) * torch.ones(probs_ema_image.shape).cuda()
+            
+            # 计算图像和点云预测概率分布与均匀分布之间的KL散度的负值
+            # loss_entropy_image 计算图像模态的熵损失
+            # loss_entropy_pc 计算点云模态的熵损失
+            # probs_ema_image 和 probs_ema_pc 分别是图像和点云的预测概率分布
+            # b 是均匀分布
+            # KL散度越大，说明模型预测越偏离均匀分布（越有信心）。
+            # 取负号（-kl_divergence）后，作为损失项时，鼓励模型输出更“均匀”的分布，即增加预测的不确定性（熵），防止过拟合或过度自信。
+            # 负的KL散度作为损失，实际上是鼓励模型输出更高熵、更均匀的分布。
             loss_entropy_image = -kl_divergence(probs_ema_image, b)
             loss_entropy_pc = -kl_divergence(probs_ema_pc, b)
+            
 
-            if train_config['combined_pseudolabels']:
+            if train_config['combined_pseudolabels']:  # True
+                # 就是概率向量（一维），每个元素是概率值
                 score_pc = score_pc* train_config['conf_weight_pc']
 
-                if train_config['agreement_pseudolabels']:
+                if train_config['agreement_pseudolabels']:  # Fasle
                     combined_scores = torch.min(score_pc, score_image)
                     conf_mask = (pseudo_targets_pc == pseudo_targets_image)*(combined_scores > train_config['agreement_pseudolabels_min_thresh'])
                     conf_mask_image = conf_mask
@@ -71,12 +124,12 @@ def train_one_epoch(model: torch.nn.Module, args, train_config,
                         conf_mask_pc]).sum() / pseudo_targets_image[conf_mask_image].shape[0]
 
 
-                else:
-                    if combine_naive:
+                else:  # THIS！！
+                    if combine_naive:  # False
                         bs = score_pc.shape[0]
                         picked = torch.randint(2, (bs,)).cuda()
                         combined_scores = score_pc * (picked == 1) + score_image * (picked == 0)
-                    else:
+                    else:  # THIS！！
                         combined_scores = torch.max(score_pc, score_image)
                     combined_targets = pseudo_targets_pc * (combined_scores == score_pc) + pseudo_targets_image * (combined_scores == score_image)
 
@@ -84,20 +137,20 @@ def train_one_epoch(model: torch.nn.Module, args, train_config,
                     conf_mask_pc = conf_mask_image
 
                     pseudolabel_agreement_loss = (pseudo_targets_image[conf_mask_image]!=pseudo_targets_pc[conf_mask_pc]).sum()/pseudo_targets_image[conf_mask_image].shape[0]
-                    pseudo_targets_image = combined_targets
+                    pseudo_targets_image = combined_targets #刚刚得分最高的那个模态的伪标签
                     pseudo_targets_pc = combined_targets
 
-            else:
+            else:  # False
                 conf_mask_image = score_image > train_config['conf_threshold_image']
                 conf_mask_pc = score_pc > train_config['conf_threshold_pc']
 
             pseudo_label_acc_image = (pseudo_targets_image[conf_mask_image] == targets[conf_mask_image]).float().mean().item()
-            conf_ratio_image = conf_mask_image.float().sum()/conf_mask_image.size(0)
+            conf_ratio_image = conf_mask_image.float().sum()/conf_mask_image.size(0) # 计算图像模态的高置信度比例
             if train_config['from_scratch']:
                 pseudo_label_acc_pc = (pseudo_targets_image[conf_mask_image] == targets[conf_mask_image]).float().mean().item()
             else:
                 pseudo_label_acc_pc = (pseudo_targets_pc[conf_mask_pc] == targets[conf_mask_pc]).float().mean().item()
-            conf_ratio_pc = conf_mask_pc.float().sum() / conf_mask_pc.size(0)
+            conf_ratio_pc = conf_mask_pc.float().sum() / conf_mask_pc.size(0) # 计算点云模态的高置信度比例
 
             metric_logger.update(conf_ratio_image=conf_ratio_image)
             metric_logger.update(pseudo_label_acc_image=pseudo_label_acc_image)

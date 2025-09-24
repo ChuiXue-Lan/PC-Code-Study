@@ -1,0 +1,43 @@
+# ShapeNetCore渲染配置文件
+
+# 数据集路径配置
+paths:
+  input_path: "/path/to/ShapeNetCore"  # ShapeNetCore数据集根目录
+  output_path: "./rendered_images"     # 渲染结果输出目录
+
+# 渲染参数配置
+rendering:
+  image_size: 224          # 渲染图像大小
+  points_radius: 0.02      # 渲染时点的半径
+  points_per_pixel: 1      # 每个像素的点数
+  camera_distance: 2.0     # 相机距离
+
+# 硬件配置
+hardware:
+  gpu_id: 0                # GPU设备ID
+  batch_size: 1            # 批处理大小（当前版本为1）
+
+# 视角配置
+views:
+  type: "dodecahedron"     # 视角类型：十二面体
+  count: 20                # 视角数量
+
+# 处理配置
+processing:
+  skip_existing: true      # 跳过已存在的文件
+  max_error_count: 5       # 最大错误次数
+  categories: null         # 指定类别列表（null表示处理所有类别）
+  # 示例：categories: ["02691156", "02747177", "04554684"]
+
+# 输出配置
+output:
+  format: "png"            # 输出格式
+  normalize: true          # 是否归一化深度值
+  background_value: 0.0    # 背景值
+
+# 日志配置
+logging:
+  verbose: true            # 详细输出
+  save_log: true           # 保存日志文件
+  log_level: "INFO"        # 日志级别
+

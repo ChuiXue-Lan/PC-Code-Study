@@ -1,0 +1,183 @@
+model : {
+  NAME: Point_BERT,
+  m: 0.999,
+  T: 0.07,
+  K: 16384,
+  transformer_config: {
+    mask_ratio: [0.3, 0.4],
+    trans_dim: 384,
+    depth: 12,
+    drop_path_rate: 0.1,
+    cls_dim: 512,
+    replace_pob: 0.,
+    num_heads: 6,
+    moco_loss: False,
+    dvae_loss: False,
+    cutmix_loss: False,
+    return_all_tokens: False,
+  },
+  dvae_config : {
+    group_size: 32,
+    num_group: 64,
+    encoder_dims: 256,
+    num_tokens: 8192,
+    tokens_dims: 256, 
+    decoder_dims: 256, 
+    ckpt: './checkpoints/dVAE.pth'  # set the dVAE weight here
+  }
+}
+
+grad_norm_clip : 10
+
+input_size : 224
+mask_patch_size: 32
+model_patch_size: 16
+model_ema_decay_init: 0.99
+warm_it: 400
+
+mask_ratio: 0.3
+
+# Image modality weights
+w_align_image: 0.2
+w_fair_image: 1
+w_mim_image: 1
+
+# Point cloud modality weights
+w_align_pc: 0.2
+w_fair_pc: 1
+w_mim_pc: 1
+
+# Depth modality weights
+w_align_depth: 0.2
+w_fair_depth: 1
+w_mim_depth: 1
+
+# Confidence thresholds
+conf_threshold_image: 0.8
+conf_threshold_pc: 0.82
+conf_threshold_depth: 0.8
+pc_loss_weight: 1
+depth_loss_weight: 1
+
+# Cross-modal alignment
+combined_pseudolabels: True
+conf_threshold_combined: 0.84
+conf_weight_pc: 0.45
+conf_weight_depth: 0.45
+pseudolabel_agreement_loss: False
+w_pseudo_agree: 0.1
+
+# Cross-modal alignment weights
+image_pc_align: True
+w_image_pc_align: 0.5
+image_depth_align: True
+w_image_depth_align: 0.5
+pc_depth_align: True
+w_pc_depth_align: 0.5
+
+agreement_pseudolabels: False
+agreement_pseudolabels_min_thresh: 0.2
+
+lr: 0.00002
+epochs: 200
+warmup_epochs : 1
+eval_freq: 1
+npoints: 8192
+batch_size : 128
+consider_metric: CDL1
+
+from_scratch: False
+ulip: False
+
+entropy_image: False
+entropy_pc: False
+entropy_depth: False
+
+only_pc: False
+only_image: False
+only_depth: False
+mask: True
+
+trans_pcl_img: True
+trans_img_pcl: True
+trans_depth_img: True
+trans_img_depth: True
+trans_pcl_depth: True
+trans_depth_pcl: True
+
+# # Dataset configuration
+# dataset: {
+#   NAME: ModelNet40_img_pcl_depth_multiview,
+#   DATA_PATH: '/data/Lan/datasets/ModelNet40/ModelNet40/',
+#   subset: 'train',
+#   npoints: 8192,
+#   num_views: 12,
+#   USE_NORMALS: False,
+#   NUM_CATEGORY: 40
+# }
+
+# # 数据路径配置
+# DATA_PATH: '/data/Lan/datasets/ModelNet40/ModelNet40/'
+# IMAGE_PATH: '/data/Lan/datasets/ModelNet40/rendering'
+# DEPTH_PATH: '/data/Lan/datasets/ModelNet40/depth'
+# NUM_CATEGORY: 40
+# USE_NORMALS: FALSE
+# NVIEWS: 12
+
+# # 模型配置
+# embed_dim: 512
+# vision_width: 768
+# pc_feat_dims: 768
+# mask: True
+
+# # 损失权重配置
+# pc_loss_weight: 1.0         # 点云损失权重
+# depth_loss_weight: 1.0      # 深度图损失权重
+# image_loss_weight: 1.0      # 图像损失权重
+
+# # 跨模态对齐损失权重
+# w_image_pc_align: 1.0       # 图像-点云对齐损失权重
+# w_image_depth_align: 1.0    # 图像-深度图对齐损失权重
+# w_depth_pc_align: 1.0       # 深度图-点云对齐损失权重
+
+# # 伪标签相关配置
+# combined_pseudolabels: True  # 是否使用组合伪标签
+# conf_threshold_combined: 0.84 # 组合置信度阈值
+# conf_weight_pc: 0.4         # 点云置信度权重
+# conf_weight_image: 0.3      # 图像置信度权重
+# conf_weight_depth: 0.3      # 深度图置信度权重
+
+# # 一致性学习配置
+# agreement_pseudolabels: True # 是否使用一致性伪标签
+# agreement_pseudolabels_min_thresh: 0.2 # 一致性伪标签最小阈值
+
+# # 训练相关配置
+# lr: 0.00002                 # 学习率
+# epochs: 100                 # 训练轮数
+# warmup_epochs: 10           # 预热轮数
+# eval_freq: 1                # 评估频率
+# npoints: 8192               # 点云点数
+# batch_size: 32              # batch size
+# consider_metric: CDL1       # 考虑的评估指标
+
+# # 模型训练模式配置
+# from_scratch: False         # 是否从头训练
+# ulip: True                  # 是否使用ULIP
+
+# # 熵正则化配置
+# entropy_image: False        # 是否使用图像熵正则化
+# entropy_pc: False          # 是否使用点云熵正则化
+# entropy_depth: False       # 是否使用深度图熵正则化
+
+# # 模态选择配置
+# only_pc: False             # 是否只使用点云
+# only_image: False          # 是否只使用图像
+# only_depth: False          # 是否只使用深度图
+
+# # 跨模态转换配置
+# trans_pcl_img: True        # 是否进行点云到图像的转换
+# trans_img_pcl: True        # 是否进行图像到点云的转换
+# trans_depth_img: True      # 是否进行深度图到图像的转换
+# trans_img_depth: True      # 是否进行图像到深度图的转换
+# trans_pcl_depth: True      # 是否进行点云到深度图的转换
+# trans_depth_pcl: True      # 是否进行深度图到点云的转换 

@@ -142,6 +142,17 @@ class ShapeNet(data.Dataset):
         points = self.pc_norm(points)
         points = torch.from_numpy(points).float()
 
+        # 从ShapeNetCore.v2数据集中加载3D模型的网格数据
+        # 使用os.path.join()拼接路径,包含:
+        # - 数据集根目录 /data/ShapeNetCore.v2
+        # - 类别ID sample['taxonomy_id'] 
+        # - 模型ID sample['model_id']
+        # - models子目录
+        # - model_normalized.obj文件名
+        # 调用_load_mesh()方法加载网格数据,返回:
+        # - verts: 顶点坐标
+        # - faces: 面片索引 
+        # - textures: 纹理信息
         verts, faces, textures = self._load_mesh(os.path.join('/data/ShapeNetCore.v2', sample['taxonomy_id'], sample['model_id'], 'models', 'model_normalized.obj'))
         verts = torch_center_and_normalize(verts.to(torch.float), '2.0')
         mesh = dict()

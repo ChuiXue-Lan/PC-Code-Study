@@ -1,0 +1,5 @@
+NAME: ModelNet40_img_pcl
+DATA_PATH: '/data/Lan/datasets/ModelNet40/ModelNet40/'
+IMAGE_PATH: '/data/Lan/datasets/ModelNet40/rendering'
+NUM_CATEGORY: 40
+USE_NORMALS: FALSE

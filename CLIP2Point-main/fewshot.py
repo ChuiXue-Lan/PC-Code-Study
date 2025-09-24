@@ -46,8 +46,9 @@ def train(args, io):
     optimizer = torch.optim.AdamW(model.parameters(), lr=1e-3, weight_decay=1e-4)
     n_epochs = args.epoch
     max_test_acc = 0
-    summary_writer = SummaryWriter("exp_results/%s/tensorboard" % args.exp_name)
+    summary_writer = SummaryWriter("/home/cls2024/ltx/tmp/exp_results/%s/tensorboard" % args.exp_name)
     for epoch in range(n_epochs):
+        print("=================================== epoch：%d TRAINING PHASE ======================================================" % (epoch + 1))
         model.train()
         loss_sum = 0
         correct_num = 0
@@ -90,12 +91,13 @@ def train(args, io):
         summary_writer.add_scalar("test/acc", test_acc, epoch + 1)
         if test_acc > max_test_acc:
             max_test_acc = test_acc
-            torch.save(model.state_dict(), 'exp_results/%s/best.pth' % (args.exp_name))
+            torch.save(model.state_dict(), '/home/cls2024/ltx/tmp/exp_results/%s/best.pth' % (args.exp_name))
             io.cprint('save the best test acc at %d' % (epoch + 1))
 
 
 def eval(args):
     assert args.ckpt is not None, 'load a checkpoint for evaluation'
+    print("==================================== Evaluating on ModelNet40 ====================================")
     test_dataloader = DataLoader(ModelNet40Ply('test'), batch_size=args.test_batch_size, num_workers=4, shuffle=True)
     
     # 创建模型
@@ -129,20 +131,25 @@ def eval(args):
     
     prompt_feats = prompts_feats.to(device).detach()
 
+    # 将模型设置为评估模式
     model.eval()
+    # 不计算梯度
     with torch.no_grad():
-        correct_num = 0
-        total = 0
+        correct_num = 0  # 正确预测的样本数
+        total = 0  # 总样本数
+        # 遍历测试数据集
         for (points, label) in tqdm(test_dataloader):
-            points = points.to(device)
-            img_feats = model(points)
-            logits = img_feats @ prompt_feats.t()
-            probs = logits.softmax(dim=-1)
-            index = torch.max(probs, dim=1).indices
+            points = points.to(device)  # 将点云数据移到GPU
+            img_feats = model(points)  # 获取点云特征
+            logits = img_feats @ prompt_feats.t()  # 计算与prompt特征的相似度
+            probs = logits.softmax(dim=-1)  # 计算softmax概率
+            index = torch.max(probs, dim=1).indices  # 获取最大概率对应的类别
+            # 统计正确预测的数量
             correct_num += torch.sum(torch.eq(index.detach().cpu(), label)).item()
-            total += len(label)
+            total += len(label)  # 累加总样本数
+    # 计算测试准确率
     test_acc = correct_num / total
-    print(test_acc)
+    print(test_acc)  # 打印测试准确率
 
 
 if __name__ == "__main__":
@@ -167,7 +174,7 @@ if __name__ == "__main__":
 
     if not args.eval:
         _init_()
-        io = IOStream('exp_results/' + args.exp_name + '/run.log')
+        io = IOStream('/home/cls2024/ltx/tmp/exp_results/' + args.exp_name + '/run.log')
         io.cprint(str(args))
         train(args, io)
     else:

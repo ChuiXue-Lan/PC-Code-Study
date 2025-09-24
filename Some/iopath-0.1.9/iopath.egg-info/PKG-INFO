@@ -1,0 +1,9 @@
+Metadata-Version: 2.1
+Name: iopath
+Version: 0.1.9
+Summary: A library for providing I/O abstraction.
+Home-page: https://github.com/facebookresearch/iopath
+Author: FAIR
+License: MIT licensed, as found in the LICENSE file
+Requires-Python: >=3.6
+License-File: LICENSE

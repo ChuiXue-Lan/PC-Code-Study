@@ -1,0 +1,6 @@
+NAME: ModelNet40_4modal
+DATA_PATH: '/home/cls2024/ltx/Replicate/TMB/data/modelnet40_rendered/ModelNet40'
+IMAGE_PATH: '/home/cls2024/ltx/Replicate/TMB/data/modelnet40_rendered/render_images_matlab'
+DEPTH_PATH: '/home/cls2024/ltx/Replicate/TMB/data/modelnet40_rendered/ModelNet40_depth_dodecahedron_mini'
+NUM_CATEGORY: 40
+USE_NORMALS: FALSE

@@ -1,0 +1,92 @@
+# 模型配置
+model : {
+  NAME: Point_BERT,        # 使用Point-BERT模型
+  m: 0.999,               # 动量编码器动量值
+  T: 0.07,                # 温度参数
+  K: 16384,               # 队列大小
+  transformer_config: {    # Transformer配置
+    mask_ratio: [0.3, 0.4], # 掩码比例范围
+    trans_dim: 384,       # Transformer维度
+    depth: 12,            # Transformer层数
+    drop_path_rate: 0.1,  # Drop path率
+    cls_dim: 512,         # 分类维度
+    replace_pob: 0.,      # 替换概率
+    num_heads: 6,         # 注意力头数
+    moco_loss: False,     # 是否使用MoCo损失
+    dvae_loss: False,     # 是否使用dVAE损失
+    cutmix_loss: False,   # 是否使用CutMix损失
+    return_all_tokens: False, # 是否返回所有token
+  },
+  dvae_config : {         # dVAE配置
+    group_size: 32,       # 分组大小
+    num_group: 64,        # 分组数量
+    encoder_dims: 256,    # 编码器维度
+    num_tokens: 8192,     # token数量
+    tokens_dims: 256,     # token维度
+    decoder_dims: 256,    # 解码器维度
+    ckpt: './checkpoints/dVAE.pth'  # dVAE预训练权重路径
+  }
+}
+
+grad_norm_clip : 10       # 梯度裁剪阈值
+
+# 图像相关配置
+input_size : 224          # 输入图像大小
+mask_patch_size: 32       # 掩码patch大小
+model_patch_size: 16      # 模型patch大小
+model_ema_decay_init: 0.99 # EMA衰减初始值
+warm_it: 400              # 预热迭代次数
+
+# 掩码和对齐权重配置
+mask_ratio: 0.3           # 掩码比例
+w_align_image: 0.2        # 图像对齐损失权重
+w_fair_image: 1          # 图像公平性损失权重
+w_mim_image: 1           # 图像MIM损失权重
+
+w_align_pc: 0.2          # 点云对齐损失权重
+w_fair_pc: 1             # 点云公平性损失权重
+w_mim_pc: 1              # 点云MIM损失权重
+
+# 置信度阈值配置
+conf_threshold_image: 0.8  # 图像置信度阈值
+conf_threshold_pc: 0.82   # 点云置信度阈值
+pc_loss_weight: 1         # 点云损失权重
+
+# 伪标签相关配置
+combined_pseudolabels: True # 是否使用组合伪标签
+conf_threshold_combined: 0.84 # 组合置信度阈值
+conf_weight_pc: 0.9       # 点云置信度权重
+pseudolabel_agreement_loss: False # 是否使用伪标签一致性损失
+w_pseudo_agree: 0.1       # 伪标签一致性损失权重
+image_pc_align: True      # 是否进行图像-点云对齐
+w_image_pc_align: 1       # 图像-点云对齐损失权重
+
+# 一致性学习配置
+agreement_pseudolabels: False # 是否使用一致性伪标签
+agreement_pseudolabels_min_thresh: 0.2 # 一致性伪标签最小阈值
+
+# 训练相关配置
+lr: 0.00002              # 学习率
+epochs: 1                # 训练轮数
+warmup_epochs : 1        # 预热轮数
+eval_freq: 1             # 评估频率
+npoints: 8192            # 点云点数
+batch_size : 4           # batch size
+consider_metric: CDL1    # 考虑的评估指标
+
+# 模型训练模式配置
+from_scratch: False      # 是否从头训练
+ulip: False             # 是否使用ULIP
+
+# 熵正则化配置
+entropy_image: False     # 是否使用图像熵正则化
+entropy_pc: False        # 是否使用点云熵正则化
+
+# 模态选择配置
+only_pc: False          # 是否只使用点云
+only_image: False       # 是否只使用图像
+mask: True              # 是否使用掩码
+
+# 跨模态转换配置
+trans_pcl_img: True     # 是否进行点云到图像的转换
+trans_img_pcl: True     # 是否进行图像到点云的转换

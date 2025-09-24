@@ -59,9 +59,19 @@ def train(args, io):
             loss_sum += loss.item()
             loss.backward()
             optimizer.step()
+            # 对logits进行softmax操作,得到每个类别的预测概率
             probs = logits.softmax(dim=-1)
+            
+            # 获取每个样本预测概率最大的类别索引
+            # dim=1表示在类别维度上取最大值
             index = torch.max(probs, dim=1).indices
+            
+            # 统计预测正确的样本数
+            # torch.eq比较预测的类别索引和真实标签是否相等
+            # .item()将tensor转换为Python数值
             correct_num += torch.sum(torch.eq(index, label)).item()
+            
+            # 累计样本总数,用于计算准确率
             total += len(label)
         train_acc = correct_num / total
     

@@ -1,0 +1,5 @@
+NAME: ModelNet40_img_pcl
+DATA_PATH: '/home/cls2024/ltx/Replicate/CrossMoST-main/data/modelnet40_rendered/ModelNet40_mini'
+IMAGE_PATH: '/home/cls2024/ltx/Replicate/CrossMoST-main/data/modelnet40_rendered/render_images_mini'
+NUM_CATEGORY: 40
+USE_NORMALS: FALSE
